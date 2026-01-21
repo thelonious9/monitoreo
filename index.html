@@ -2,108 +2,102 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Monitoreo de Medios - Hidalgo</title>
+    <title>Monitoreo de Medios - GEH</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         :root { --guinda: #611232; --dorado: #A57F2C; }
         body { font-family: sans-serif; margin: 0; background: #f4f4f4; display: flex; flex-direction: column; height: 100vh; }
-        .header { background: var(--guinda); color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 4px solid var(--dorado); }
+        .header { background: var(--guinda); color: white; padding: 15px; display: flex; justify-content: space-between; border-bottom: 4px solid var(--dorado); }
         .main { display: flex; flex: 1; overflow: hidden; }
         .sidebar { width: 280px; background: white; padding: 20px; border-right: 1px solid #ccc; overflow-y: auto; }
         .content { flex: 1; padding: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; overflow-y: auto; }
         .card { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); min-height: 350px; }
-        .filter-group { margin-bottom: 12px; }
-        .filter-group label { display: block; font-size: 11px; font-weight: bold; color: #666; text-transform: uppercase; margin-bottom: 4px; }
-        .filter-group select { width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc; }
+        .f-group { margin-bottom: 12px; }
+        .f-group label { display: block; font-size: 11px; font-weight: bold; color: #666; text-transform: uppercase; margin-bottom: 4px; }
+        .f-group select { width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc; }
     </style>
 </head>
 <body>
-
-<div class="header">
-    <h2 style="margin:0">Monitoreo de Medios</h2>
-    <div>Registros: <span id="total-reg">0</span> | <button onclick="exportarPDF()" style="background:var(--dorado); color:white; border:none; padding:8px 15px; border-radius:4px; cursor:pointer; font-weight:bold;">PDF</button></div>
-</div>
-
-<div class="main">
-    <div class="sidebar">
-        <h3 style="color:var(--guinda); margin-top:0;">Filtros de Análisis</h3>
-        <div id="filter-container"></div>
-        <button onclick="location.reload()" style="width:100%; margin-top:15px; padding:10px; cursor:pointer; background:#eee; border:1px solid #ccc; border-radius:4px;">Limpiar Filtros</button>
+    <div class="header">
+        <h2 style="margin:0">Monitoreo de Medios - GEH</h2>
+        <div>Registros: <span id="t-reg">0</span> | <button onclick="genPDF()" style="background:var(--dorado); color:white; border:none; padding:8px 15px; border-radius:4px; cursor:pointer; font-weight:bold;">PDF</button></div>
     </div>
-    <div class="content" id="dashboard">
-        <div class="card"><canvas id="chart1"></canvas></div>
-        <div class="card"><canvas id="chart2"></canvas></div>
-        <div class="card"><canvas id="chart3"></canvas></div>
-        <div class="card"><canvas id="chart4"></canvas></div>
+    <div class="main">
+        <div class="sidebar">
+            <div id="f-cont"></div>
+            <button onclick="location.reload()" style="width:100%; margin-top:15px; padding:10px; cursor:pointer;">Limpiar Filtros</button>
+        </div>
+        <div class="content" id="dash">
+            <div class="card"><canvas id="g1"></canvas></div>
+            <div class="card"><canvas id="g2"></canvas></div>
+            <div class="card"><canvas id="g3"></canvas></div>
+            <div class="card"><canvas id="g4"></canvas></div>
+        </div>
     </div>
-</div>
-
 <script>
-let rawData = []; let charts = {};
-const filterCols = ["Dependencia", "Tema", "Estatus", "Agrupación", "Municipio", "Clasificación", "Cobertura", "Nivel"];
+let rData = []; let vCharts = {};
+const vCols = ["Dependencia", "Tema", "Estatus", "Agrupación", "Municipio", "Clasificación", "Cobertura", "Nivel"];
 
 async function start() {
     try {
+        // La ruta debe ser exacta a tu carpeta en GitHub
         const res = await fetch('./Data/datos.json');
         if (!res.ok) throw new Error();
-        rawData = await res.json();
-        renderFilters();
+        rData = await res.json();
+        renderF();
         refresh();
     } catch (e) {
-        document.getElementById('dashboard').innerHTML = `<h2 style="grid-column:1/-1;text-align:center;padding-top:50px;">⚠️ Error: El archivo datos.json no se encuentra en la carpeta Data.</h2>`;
+        document.getElementById('dash').innerHTML = `<h2 style="grid-column:1/-1;text-align:center;padding-top:50px;">⚠️ Error de Carga: Verifica que el archivo datos.json esté en la carpeta Data.</h2>`;
     }
 }
 
-function renderFilters() {
-    const cont = document.getElementById('filter-container');
-    cont.innerHTML = "";
-    filterCols.forEach(c => {
-        const div = document.createElement('div');
-        div.className = 'filter-group';
-        div.innerHTML = `<label>${c}</label><select id="f-${c}" onchange="refresh()"></select>`;
-        cont.appendChild(div);
+function renderF() {
+    const c = document.getElementById('f-cont');
+    c.innerHTML = "";
+    vCols.forEach(col => {
+        const d = document.createElement('div');
+        d.className = 'f-group';
+        d.innerHTML = `<label>${col}</label><select id="sel-${col}" onchange="refresh()"></select>`;
+        c.appendChild(d);
     });
 }
 
 function refresh() {
-    let currentFilters = {};
-    filterCols.forEach(c => currentFilters[c] = document.getElementById(`f-${c}`).value || "Todos");
+    let f = {};
+    vCols.forEach(col => f[col] = document.getElementById(`sel-${col}`).value || "Todos");
+    let fil = rData.filter(d => vCols.every(col => f[col] === "Todos" || String(d[col]) === f[col]));
+    document.getElementById('t-reg').innerText = fil.length.toLocaleString();
 
-    let filtered = rawData.filter(d => filterCols.every(c => currentFilters[c] === "Todos" || String(d[c]) === currentFilters[c]));
-    document.getElementById('total-reg').innerText = filtered.length.toLocaleString();
-
-    filterCols.forEach(c => {
-        const sel = document.getElementById(`f-${c}`);
-        const active = currentFilters[c];
-        const available = [...new Set(rawData.filter(d => filterCols.every(k => k === c || currentFilters[k] === "Todos" || String(d[k]) === currentFilters[k])).map(d => String(d[c])))].sort();
-        let h = `<option value="Todos">-- Todos (${available.length}) --</option>`;
-        available.forEach(o => h += `<option value="${o}" ${o === active ? 'selected' : ''}>${o}</option>`);
-        sel.innerHTML = h;
+    vCols.forEach(col => {
+        const s = document.getElementById(`sel-${col}`);
+        const act = f[col];
+        const av = [...new Set(rData.filter(d => vCols.every(k => k === col || f[k] === "Todos" || String(d[k]) === f[k])).map(d => String(d[col])))].sort();
+        let h = `<option value="Todos">-- Todos (${av.length}) --</option>`;
+        av.forEach(o => h += `<option value="${o}" ${o === act ? 'selected' : ''}>${o}</option>`);
+        s.innerHTML = h;
     });
 
-    const draw = (id, campo, title, type) => {
-        const counts = {};
-        filtered.forEach(d => { const v = d[campo] || "N/A"; counts[v] = (counts[v] || 0) + 1; });
-        if (charts[id]) charts[id].destroy();
-        charts[id] = new Chart(document.getElementById(id), {
-            type: type,
-            data: { labels: Object.keys(counts), datasets: [{ data: Object.values(counts), backgroundColor: ['#611232', '#A57F2C', '#D4AF37', '#7E183B', '#4D4D4D'] }] },
-            options: { plugins: { title: { display: true, text: title, color: '#611232' } }, maintainAspectRatio: false }
+    const dG = (id, campo, tit, tipo) => {
+        const ctx = document.getElementById(id);
+        const ct = {};
+        fil.forEach(d => { const v = d[campo] || "N/A"; ct[v] = (ct[v] || 0) + 1; });
+        if (vCharts[id]) vCharts[id].destroy();
+        vCharts[id] = new Chart(ctx, {
+            type: tipo,
+            data: { labels: Object.keys(ct), datasets: [{ data: Object.values(ct), backgroundColor: ['#611232', '#A57F2C', '#D4AF37', '#7E183B', '#4D4D4D'] }] },
+            options: { plugins: { title: { display: true, text: tit, color: '#611232' } }, maintainAspectRatio: false }
         });
     };
-
-    draw('chart1', 'Dependencia', 'Impacto por Dependencia', 'bar');
-    draw('chart2', 'Tema', 'Distribución por Tema', 'doughnut');
-    draw('chart3', 'Estatus', 'Análisis de Sentimiento', 'pie');
-    draw('chart4', 'Medio', 'Presencia en Medios', 'bar');
+    dG('g1', 'Dependencia', 'Impacto por Dependencia', 'bar');
+    dG('g2', 'Tema', 'Distribución por Tema', 'doughnut');
+    dG('g3', 'Estatus', 'Análisis de Sentimiento', 'pie');
+    dG('g4', 'Medio', 'Presencia en Medios', 'bar');
 }
 
-function exportarPDF() {
-    const opt = { margin: 0.2, filename: 'Monitoreo.pdf', jsPDF: { orientation: 'landscape' } };
-    html2pdf().set(opt).from(document.body).save();
+function genPDF() {
+    html2pdf().set({ margin: 0.2, filename: 'Monitoreo.pdf', jsPDF: { orientation: 'landscape' } }).from(document.body).save();
 }
-
 window.onload = start;
 </script>
 </body>
