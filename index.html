@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Monitoreo de Medios - GEH</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        :root { --guinda: #611232; --dorado: #A57F2C; }
+        body { font-family: sans-serif; margin: 0; background: #f4f4f4; display: flex; flex-direction: column; height: 100vh; }
+        .header { background: var(--guinda); color: white; padding: 15px; display: flex; justify-content: space-between; border-bottom: 4px solid var(--dorado); }
+        .main { display: flex; flex: 1; overflow: hidden; }
+        .sidebar { width: 280px; background: white; padding: 20px; border-right: 1px solid #ccc; overflow-y: auto; }
+        .content { flex: 1; padding: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; overflow-y: auto; }
+        .card { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); min-height: 320px; }
+        .filter-group { margin-bottom: 10px; }
+        .filter-group label { display: block; font-size: 11px; font-weight: bold; color: #666; margin-bottom: 3px; }
+        .filter-group select { width: 100%; padding: 5px; border-radius: 4px; border: 1px solid #ccc; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h2 style="margin:0">Monitoreo de Medios - Hidalgo</h2>
+    <div>Registros: <span id="total-reg">0</span> | <button onclick="exportarPDF()" style="background:var(--dorado); color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer;">PDF</button></div>
+</div>
+
+<div class="main">
+    <div class="sidebar">
+        <div id="filter-container"></div>
+        <button onclick="location.reload()" style="width:100%; margin-top:15px; padding:10px; cursor:pointer;">Limpiar Filtros</button>
+    </div>
+    <div class="content" id="dashboard">
+        <div class="card"><canvas id="chart1"></canvas></div>
+        <div class="card"><canvas id="chart2"></canvas></div>
+        <div class="card"><canvas id="chart3"></canvas></div>
+        <div class="card"><canvas id="chart4"></canvas></div>
+        <div class="card" style="grid-column: 1/-1;"><textarea id="notas" style="width:100%; height:80px; padding:10px;" placeholder="Notas..."></textarea></div>
+    </div>
+</div>
+
+<script>
+let rawData = []; let charts = {};
+const cols = ["Dependencia", "Tema", "Estatus", "Agrupación", "Municipio", "Clasificación", "Cobertura", "Nivel"];
+
+async function start() {
+    try {
+        // El ./ es vital en GitHub Pages
+        const res = await fetch('./Data/datos.json');
+        if (!res.ok) throw new Error("No se pudo cargar el JSON");
+        rawData = await res.json();
+        
+        renderFilters();
+        refresh();
+    } catch (e) {
+        document.getElementById('dashboard').innerHTML = `<h2 style="grid-column:1/-1;text-align:center;">⚠️ Error: Verifica que el archivo esté en la carpeta /Data/datos.json</h2>`;
+    }
+}
+
+function renderFilters() {
+    const cont = document.getElementById('filter-container');
+    cont.innerHTML = "";
+    cols.forEach(c => {
+        const div = document.createElement('div');
+        div.className = 'filter-group';
+        div.innerHTML = `<label>${c}</label><select id="f-${c}" onchange="refresh()"></select>`;
+        cont.appendChild(div);
+    });
+}
+
+function refresh() {
+    let filters = {};
+    cols.forEach(c => filters[c] = document.getElementById(`f-${c}`).value || "Todos");
+
+    let filtered = rawData.filter(d => cols.every(c => filters[c] === "Todos" || String(d[c]) === filters[c]));
+    document.getElementById('total-reg').innerText = filtered.length;
+
+    cols.forEach(c => {
+        const sel = document.getElementById(`f-${c}`);
+        const prev = filters[c];
+        const opts = [...new Set(rawData.filter(d => cols.every(k => k === c || filters[k] === "Todos" || String(d[k]) === filters[k])).map(d => String(d[c])))].sort();
+        let h = `<option value="Todos">-- Todos (${opts.length}) --</option>`;
+        opts.forEach(o => h += `<option value="${o}" ${o === prev ? 'selected' : ''}>${o}</option>`);
+        sel.innerHTML = h;
+    });
+
+    const draw = (id, campo, title, type) => {
+        const counts = {};
+        filtered.forEach(d => { const v = d[campo] || "N/A"; counts[v] = (counts[v] || 0) + 1; });
+        if (charts[id]) charts[id].destroy();
+        
+        let colors = ['#611232', '#A57F2C', '#D4AF37', '#7E183B'];
+        if(campo === 'Estatus') {
+            colors = Object.keys(counts).map(l => {
+                const low = l.toLowerCase();
+                return low.includes('neg') ? '#dc3545' : low.includes('pos') ? '#28a745' : '#ffc107';
+            });
+        }
+
+        charts[id] = new Chart(document.getElementById(id), {
+            type: type,
+            data: { labels: Object.keys(counts), datasets: [{ data: Object.values(counts), backgroundColor: colors }] },
+            options: { plugins: { title: { display: true, text: title, color: '#611232' } }, maintainAspectRatio: false }
+        });
+    };
+
+    draw('chart1', 'Dependencia', 'Impacto por Dependencia', 'bar');
+    draw('chart2', 'Tema', 'Distribución por Tema', 'doughnut');
+    draw('chart3', 'Estatus', 'Análisis de Sentimiento', 'pie');
+    draw('chart4', 'Medio', 'Presencia en Medios', 'bar');
+}
+
+function exportarPDF() {
+    const opt = { margin: 0.2, filename: 'Monitoreo_Hidalgo.pdf', jsPDF: { orientation: 'landscape' } };
+    html2pdf().set(opt).from(document.body).save();
+}
+
+window.onload = start;
+</script>
+</body>
+</html>
