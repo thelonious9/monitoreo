@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -23,11 +22,12 @@
 
 <div class="header">
     <h2 style="margin:0">Monitoreo de Medios - Hidalgo</h2>
-    <div>Registros: <span id="total-reg">0</span> | <button onclick="exportarPDF()" style="background:var(--dorado); color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer;">PDF</button></div>
+    <div>Registros: <span id="total-reg">0</span> | <button onclick="exportarPDF()" style="background:var(--dorado); color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer;">Exportar PDF</button></div>
 </div>
 
 <div class="main">
     <div class="sidebar">
+        <h3 style="color:var(--guinda); margin-top:0;">Filtros de Análisis</h3>
         <div id="filter-container"></div>
         <button onclick="location.reload()" style="width:100%; margin-top:15px; padding:10px; cursor:pointer;">Limpiar Filtros</button>
     </div>
@@ -36,32 +36,34 @@
         <div class="card"><canvas id="chart2"></canvas></div>
         <div class="card"><canvas id="chart3"></canvas></div>
         <div class="card"><canvas id="chart4"></canvas></div>
-        <div class="card" style="grid-column: 1/-1;"><textarea id="notas" style="width:100%; height:80px; padding:10px;" placeholder="Notas..."></textarea></div>
+        <div class="card" style="grid-column: 1/-1;">
+            <textarea id="notas" style="width:100%; height:80px; padding:10px; width:100%;" placeholder="Escriba sus conclusiones aquí..."></textarea>
+        </div>
     </div>
 </div>
 
 <script>
-let rawData = []; let charts = {};
-const cols = ["Dependencia", "Tema", "Estatus", "Agrupación", "Municipio", "Clasificación", "Cobertura", "Nivel"];
+let rawData = []; 
+let charts = {};
+const filterCols = ["Dependencia", "Tema", "Estatus", "Agrupación", "Municipio", "Clasificación", "Cobertura", "Nivel"];
 
 async function start() {
     try {
-        // El ./ es vital en GitHub Pages
+        // El ./ es vital para la ruta en GitHub Pages
         const res = await fetch('./Data/datos.json');
         if (!res.ok) throw new Error("No se pudo cargar el JSON");
         rawData = await res.json();
-        
         renderFilters();
         refresh();
     } catch (e) {
-        document.getElementById('dashboard').innerHTML = `<h2 style="grid-column:1/-1;text-align:center;">⚠️ Error: Verifica que el archivo esté en la carpeta /Data/datos.json</h2>`;
+        document.getElementById('dashboard').innerHTML = `<h2 style="grid-column:1/-1;text-align:center;">⚠️ Error: Verifica la carpeta /Data/datos.json</h2>`;
     }
 }
 
 function renderFilters() {
     const cont = document.getElementById('filter-container');
     cont.innerHTML = "";
-    cols.forEach(c => {
+    filterCols.forEach(c => {
         const div = document.createElement('div');
         div.className = 'filter-group';
         div.innerHTML = `<label>${c}</label><select id="f-${c}" onchange="refresh()"></select>`;
@@ -71,17 +73,22 @@ function renderFilters() {
 
 function refresh() {
     let filters = {};
-    cols.forEach(c => filters[c] = document.getElementById(`f-${c}`).value || "Todos");
+    filterCols.forEach(c => {
+        const el = document.getElementById(`f-${c}`);
+        filters[c] = el ? el.value : "Todos";
+    });
 
-    let filtered = rawData.filter(d => cols.every(c => filters[c] === "Todos" || String(d[c]) === filters[c]));
-    document.getElementById('total-reg').innerText = filtered.length;
+    let filtered = rawData.filter(d => filterCols.every(c => filters[c] === "Todos" || String(d[c]) === filters[c]));
+    document.getElementById('total-reg').innerText = filtered.length.toLocaleString();
 
-    cols.forEach(c => {
+    filterCols.forEach(c => {
         const sel = document.getElementById(`f-${c}`);
-        const prev = filters[c];
-        const opts = [...new Set(rawData.filter(d => cols.every(k => k === c || filters[k] === "Todos" || String(d[k]) === filters[k])).map(d => String(d[c])))].sort();
-        let h = `<option value="Todos">-- Todos (${opts.length}) --</option>`;
-        opts.forEach(o => h += `<option value="${o}" ${o === prev ? 'selected' : ''}>${o}</option>`);
+        if (!sel) return;
+        const active = filters[c];
+        const available = [...new Set(rawData.filter(d => filterCols.every(k => k === c || filters[k] === "Todos" || String(d[k]) === filters[k])).map(d => String(d[c])))].sort();
+        
+        let h = `<option value="Todos">-- Todos (${available.length}) --</option>`;
+        available.forEach(o => h += `<option value="${o}" ${o === active ? 'selected' : ''}>${o}</option>`);
         sel.innerHTML = h;
     });
 
@@ -119,170 +126,4 @@ function exportarPDF() {
 window.onload = start;
 </script>
 </body>
-=======
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title>Monitoreo de Medios - GEH</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    <style>
-        :root { --guinda: #611232; --dorado: #A57F2C; }
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; background: #f0f0f0; display: flex; flex-direction: column; height: 100vh; }
-        .header { background: var(--guinda); color: white; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 4px solid var(--dorado); }
-        .main { display: flex; flex: 1; overflow: hidden; }
-        .sidebar { width: 260px; background: white; padding: 20px; border-right: 1px solid #ccc; overflow-y: auto; }
-        .content { flex: 1; padding: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; overflow-y: auto; }
-        .card { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); min-height: 320px; display: flex; flex-direction: column; }
-        canvas { flex: 1 !important; height: 100% !important; }
-        .filter-group { margin-bottom: 12px; }
-        .filter-group label { display: block; font-size: 10px; font-weight: bold; color: #666; text-transform: uppercase; margin-bottom: 2px; }
-        .filter-group select { width: 100%; padding: 6px; border-radius: 4px; border: 1px solid #ccc; font-size: 12px; }
-    </style>
-</head>
-<body>
-
-<div class="header">
-    <div>
-        <h1 style="margin:0; font-size: 1.3rem;">Monitoreo de Medios</h1>
-        <small>Gobierno del Estado de Hidalgo</small>
-    </div>
-    <div style="text-align: right;">
-        <div style="font-weight: bold;">Registros Detectados: <span id="total-reg">0</span></div>
-        <button onclick="exportarPDF()" style="background:var(--dorado); color:white; border:none; padding:5px 15px; border-radius:4px; cursor:pointer; margin-top:5px; font-weight:bold;">Generar PDF</button>
-    </div>
-</div>
-
-<div class="main">
-    <div class="sidebar">
-        <h3 style="color:var(--guinda); margin-top:0; font-size: 1rem;">Filtros de Análisis</h3>
-        <div id="filter-container"></div>
-        <button onclick="location.reload()" style="width:100%; margin-top:15px; padding:8px; cursor:pointer; background:#eee; border:1px solid #ccc; border-radius:4px;">Limpiar Filtros</button>
-    </div>
-    <div class="content" id="reporte-area">
-        <div class="card"><canvas id="grafica1"></canvas></div>
-        <div class="card"><canvas id="grafica2"></canvas></div>
-        <div class="card"><canvas id="grafica3"></canvas></div>
-        <div class="card"><canvas id="grafica4"></canvas></div>
-        <div class="card" style="grid-column: 1 / -1; min-height: 120px;">
-            <textarea id="conclusiones" style="width:100%; height:90px; border:1px solid #ccc; border-radius:4px; padding:10px; resize:none;" placeholder="Escriba sus conclusiones aquí..."></textarea>
-        </div>
-    </div>
-</div>
-
-<script>
-let rawData = [];
-let charts = {};
-// Definimos las columnas que queremos usar para filtrar
-const filterCols = ["Dependencia", "Tema", "Estatus", "Agrupación", "Municipio", "Clasificación", "Cobertura", "Nivel"];
-
-async function cargarDatos() {
-    try {
-        const res = await fetch('Data/datos.json');
-        const dataJson = await res.json();
-        
-        // LIMPIEZA AUTOMÁTICA DE COLUMNAS:
-        // Quita espacios al inicio y final de los nombres de columnas que vienen de Excel
-        rawData = dataJson.map(item => {
-            let itemLimpio = {};
-            Object.keys(item).forEach(key => {
-                itemLimpio[key.trim()] = item[key];
-            });
-            return itemLimpio;
-        });
-
-        console.log("Columnas detectadas en el JSON:", Object.keys(rawData[0]));
-        console.log("Total de registros cargados:", rawData.length);
-        
-        renderFilters();
-        actualizar();
-    } catch (e) {
-        console.error("Error al cargar JSON:", e);
-        alert("Error crítico: No se pudo leer Data/datos.json");
-    }
-}
-
-function renderFilters() {
-    const cont = document.getElementById('filter-container');
-    cont.innerHTML = "";
-    filterCols.forEach(c => {
-        const div = document.createElement('div');
-        div.className = 'filter-group';
-        div.innerHTML = `<label>${c}</label><select id="f-${c}" onchange="actualizar()"></select>`;
-        cont.appendChild(div);
-    });
-}
-
-function actualizar() {
-    let filtros = {};
-    filterCols.forEach(c => {
-        const el = document.getElementById(`f-${c}`);
-        filtros[c] = el ? el.value : "Todos";
-    });
-
-    let filtrados = rawData.filter(d => filterCols.every(c => filtros[c] === "Todos" || String(d[c]) === filtros[c]));
-    document.getElementById('total-reg').innerText = filtrados.length.toLocaleString();
-
-    filterCols.forEach(c => {
-        const sel = document.getElementById(`f-${c}`);
-        if (!sel) return;
-        const actual = filtros[c];
-        const opciones = [...new Set(rawData.filter(d => filterCols.every(k => k === c || filtros[k] === "Todos" || String(d[k]) === filtros[k])).map(d => String(d[c])))].sort();
-        
-        let h = `<option value="Todos">-- Mostrar Todo (${opciones.length}) --</option>`;
-        opciones.forEach(o => { 
-            if(o && o !== "undefined" && o !== "null") {
-                h += `<option value="${o}" ${o === actual ? 'selected' : ''}>${o}</option>`; 
-            }
-        });
-        sel.innerHTML = h;
-    });
-
-    const dibujar = (canvasId, columna, titulo, tipo) => {
-        const ctx = document.getElementById(canvasId);
-        const conteo = {};
-        filtrados.forEach(d => { 
-            const v = (d[columna] || "N/A").toString().trim(); 
-            conteo[v] = (conteo[v] || 0) + 1; 
-        });
-        
-        if (charts[canvasId]) charts[canvasId].destroy();
-        
-        let colores = ['#611232', '#A57F2C', '#D4AF37', '#7E183B', '#4D4D4D'];
-        if(columna === 'Estatus') {
-            colores = Object.keys(conteo).map(l => {
-                const low = l.toLowerCase();
-                if (low.includes('neg')) return '#dc3545';
-                if (low.includes('pos')) return '#28a745';
-                return '#ffc107';
-            });
-        }
-
-        charts[canvasId] = new Chart(ctx, {
-            type: tipo,
-            data: { labels: Object.keys(conteo), datasets: [{ data: Object.values(conteo), backgroundColor: colores }] },
-            options: { 
-                responsive: true, 
-                maintainAspectRatio: false,
-                plugins: { title: { display: true, text: titulo, color: '#611232', font: { weight: 'bold' } } }
-            }
-        });
-    };
-
-    dibujar('grafica1', 'Dependencia', 'Impacto por Dependencia', 'bar');
-    dibujar('grafica2', 'Tema', 'Distribución de Temas', 'doughnut');
-    dibujar('grafica3', 'Estatus', 'Análisis de Sentimiento', 'pie');
-    dibujar('grafica4', 'Medio', 'Presencia en Medios', 'bar');
-}
-
-function exportarPDF() {
-    const element = document.getElementById('reporte-area');
-    html2pdf().set({ margin: 0.2, filename: 'Monitoreo_Hidalgo.pdf', jsPDF: { orientation: 'landscape' } }).from(element).save();
-}
-
-window.addEventListener('load', cargarDatos);
-</script>
-</body>
->>>>>>> d234dc945b3e4b50e697d648d6985168299bad10
 </html>
