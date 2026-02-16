@@ -1,104 +1,529 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <title>Monitoreo de Medios - GEH</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
-        :root { --guinda: #611232; --dorado: #A57F2C; }
-        body { font-family: sans-serif; margin: 0; background: #f4f4f4; display: flex; flex-direction: column; height: 100vh; }
-        .header { background: var(--guinda); color: white; padding: 15px; display: flex; justify-content: space-between; border-bottom: 4px solid var(--dorado); }
-        .main { display: flex; flex: 1; overflow: hidden; }
-        .sidebar { width: 280px; background: white; padding: 20px; border-right: 1px solid #ccc; overflow-y: auto; }
-        .content { flex: 1; padding: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; overflow-y: auto; }
-        .card { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); min-height: 350px; }
-        .f-group { margin-bottom: 12px; }
-        .f-group label { display: block; font-size: 11px; font-weight: bold; color: #666; text-transform: uppercase; margin-bottom: 4px; }
-        .f-group select { width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc; }
+        :root {
+            --guinda: #611232;
+            --dorado: #A57F2C;
+        }
+
+        body {
+            font-family: sans-serif;
+            margin: 0;
+            background: #f4f4f4;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        .header {
+            background: var(--guinda);
+            color: white;
+            padding: 10px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 4px solid var(--dorado);
+            z-index: 100;
+        }
+
+        .toggle-btn {
+            background: var(--dorado);
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-right: 15px;
+            transition: background 0.3s;
+        }
+
+        .toggle-btn:hover {
+            background: #8a6a25;
+        }
+
+        .main {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .sidebar {
+            width: 300px;
+            background: white;
+            padding: 20px;
+            border-right: 1px solid #ccc;
+            overflow-y: auto;
+            transition: all 0.3s ease;
+            flex-shrink: 0;
+            position: relative;
+        }
+
+        .sidebar.collapsed {
+            width: 0;
+            padding: 0;
+            border: none;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .floating-toggle {
+            position: fixed;
+            left: 280px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: var(--guinda);
+            color: white;
+            border: 2px solid var(--dorado);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            transition: left 0.3s ease, background 0.3s;
+            font-size: 20px;
+        }
+
+        .floating-toggle:hover {
+            background: var(--dorado);
+        }
+
+        .collapsed+.floating-toggle,
+        .sidebar.collapsed+.floating-toggle {
+            left: 10px;
+        }
+
+        .content {
+            flex: 1;
+            padding: 20px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-auto-rows: min-content;
+            gap: 20px;
+            overflow-y: auto;
+        }
+
+        .card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            min-height: 380px;
+        }
+
+        .card.full {
+            grid-column: 1 / -1;
+        }
+
+        .f-group {
+            margin-bottom: 12px;
+            background: #f9f9f9;
+            padding: 8px;
+            border-radius: 4px;
+        }
+
+        .f-group label {
+            display: block;
+            font-size: 11px;
+            font-weight: bold;
+            color: #611232;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+
+        .f-group select,
+        .f-group input {
+            width: 100%;
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            box-sizing: border-box;
+        }
+
+        .f-group select[multiple] {
+            height: 100px;
+        }
+
+        .analytics-ctrl {
+            margin-bottom: 20px;
+            background: #eee;
+            padding: 10px;
+            border-radius: 4px;
+            border-left: 4px solid var(--guinda);
+        }
     </style>
 </head>
+
 <body>
     <div class="header">
         <h2 style="margin:0">Monitoreo de Medios - GEH</h2>
-        <div>Registros: <span id="t-reg">0</span> | <button onclick="genPDF()" style="background:var(--dorado); color:white; border:none; padding:8px 15px; border-radius:4px; cursor:pointer; font-weight:bold;">PDF</button></div>
+        <div>Registros: <span id="t-reg">0</span> | <button onclick="genPDF()"
+                style="background:var(--dorado); color:white; border:none; padding:8px 15px; border-radius:4px; cursor:pointer; font-weight:bold;">PDF</button>
+        </div>
     </div>
     <div class="main">
-        <div class="sidebar">
+        <div class="sidebar" id="sidebar">
+            <h3 style="color:var(--guinda); margin-top:0; border-bottom:2px solid var(--dorado); padding-bottom:10px;">
+                Filtros de Control</h3>
+            <div class="analytics-ctrl">
+                <div class="f-group">
+                    <label>Top / Bottom X</label>
+                    <div style="display:flex; gap:5px;">
+                        <input type="number" id="an-x" value="10" min="1" onchange="refresh()" style="width:60px">
+                        <select id="an-mode" onchange="refresh()">
+                            <option value="top">Más Frecuentes (Top)</option>
+                            <option value="bottom">Menos Frecuentes (Bottom)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="f-group">
+                    <label>Granularidad Fecha</label>
+                    <select id="f-gran" onchange="refresh()">
+                        <option value="day">Día</option>
+                        <option value="week">Semana</option>
+                        <option value="month" selected>Mes</option>
+                        <option value="year">Año</option>
+                    </select>
+                </div>
+            </div>
             <div id="f-cont"></div>
-            <button onclick="location.reload()" style="width:100%; margin-top:15px; padding:10px; cursor:pointer;">Limpiar Filtros</button>
+            <button onclick="location.reload()"
+                style="width:100%; margin-top:15px; padding:10px; cursor:pointer; border-radius: 4px; border: 1px solid #ccc;">Limpiar
+                Filtros</button>
         </div>
+        <button class="floating-toggle" id="toggle-btn" onclick="toggleSidebar()"
+            title="Mostrar/Ocultar Filtros">◀</button>
         <div class="content" id="dash">
+            <div class="card full"><canvas id="g5"></canvas></div>
             <div class="card"><canvas id="g1"></canvas></div>
             <div class="card"><canvas id="g2"></canvas></div>
             <div class="card"><canvas id="g3"></canvas></div>
             <div class="card"><canvas id="g4"></canvas></div>
+            <div class="card"><canvas id="g6"></canvas></div>
         </div>
     </div>
-<script>
-let rData = []; let vCharts = {};
-const vCols = ["Dependencia", "Tema", "Estatus", "Agrupación", "Municipio", "Clasificación", "Cobertura", "Nivel"];
+    <script>
+        let rData = []; let vCharts = {};
+        const vCols = ["Fecha", "Dependencia", "Canal", "Medio", "Tema", "Estatus", "Municipio", "Región", "Agrupación", "Cobertura", "Nivel", "Género"];
+        const meses = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
 
-async function start() {
-    try {
-        // La ruta debe ser exacta a tu carpeta en GitHub
-        const res = await fetch('./Data/datos.json');
-        if (!res.ok) throw new Error();
-        rData = await res.json();
-        renderF();
-        refresh();
-    } catch (e) {
-        document.getElementById('dash').innerHTML = `<h2 style="grid-column:1/-1;text-align:center;padding-top:50px;">⚠️ Error de Carga: Verifica que el archivo datos.json esté en la carpeta Data.</h2>`;
-    }
-}
+        async function start() {
+            try {
+                const res = await fetch('./Data/datos.json');
+                if (!res.ok) throw new Error();
+                const raw = await res.json();
 
-function renderF() {
-    const c = document.getElementById('f-cont');
-    c.innerHTML = "";
-    vCols.forEach(col => {
-        const d = document.createElement('div');
-        d.className = 'f-group';
-        d.innerHTML = `<label>${col}</label><select id="sel-${col}" onchange="refresh()"></select>`;
-        c.appendChild(d);
-    });
-}
+                rData = raw.map(d => {
+                    if (!d.Fecha) return null;
+                    const parts = d.Fecha.split('/');
+                    if (parts.length < 3) return null;
+                    const [dd, mm, yyyy] = parts;
+                    const dateObj = new Date(yyyy, mm - 1, dd);
+                    const mName = meses[parseInt(mm) - 1];
+                    const yShort = String(yyyy).slice(-2);
 
-function refresh() {
-    let f = {};
-    vCols.forEach(col => f[col] = document.getElementById(`sel-${col}`).value || "Todos");
-    let fil = rData.filter(d => vCols.every(col => f[col] === "Todos" || String(d[col]) === f[col]));
-    document.getElementById('t-reg').innerText = fil.length.toLocaleString();
+                    return {
+                        ...d,
+                        _date: dateObj,
+                        _year: String(yyyy),
+                        _month: `${yyyy}-${String(mm).padStart(2, '0')}`,
+                        _monthLabel: `${mName}-${yShort}`,
+                        _dayLabel: `${parseInt(dd)}-${mName}-${yShort}`,
+                        _week: getWeekHtml(dateObj),
+                        "Cobertura": d["Cobertura"] || "N/A",
+                        "Nivel": d["Nivel"] || "N/A",
+                        "Dependencia": d["Dependencia"] || "N/A",
+                        "Tema": d["Tema"] || "N/A",
+                        "Estatus": d["Estatus"] || "Informativa",
+                        "Medio": d["Medio"] || "N/A",
+                        "Canal": d["Canal"] || "N/A",
+                        "Región": d["Región"] || "N/A",
+                        "Género": d["Género"] || "N/A"
+                    };
+                }).filter(d => d !== null);
 
-    vCols.forEach(col => {
-        const s = document.getElementById(`sel-${col}`);
-        const act = f[col];
-        const av = [...new Set(rData.filter(d => vCols.every(k => k === col || f[k] === "Todos" || String(d[k]) === f[k])).map(d => String(d[col])))].sort();
-        let h = `<option value="Todos">-- Todos (${av.length}) --</option>`;
-        av.forEach(o => h += `<option value="${o}" ${o === act ? 'selected' : ''}>${o}</option>`);
-        s.innerHTML = h;
-    });
+                renderF();
+                refresh();
+            } catch (e) {
+                console.error(e);
+                document.getElementById('dash').innerHTML = `<h2 style="grid-column:1/-1;text-align:center;padding-top:50px;">⚠️ Error: Verifica datos.json</h2>`;
+            }
+        }
 
-    const dG = (id, campo, tit, tipo) => {
-        const ctx = document.getElementById(id);
-        const ct = {};
-        fil.forEach(d => { const v = d[campo] || "N/A"; ct[v] = (ct[v] || 0) + 1; });
-        if (vCharts[id]) vCharts[id].destroy();
-        vCharts[id] = new Chart(ctx, {
-            type: tipo,
-            data: { labels: Object.keys(ct), datasets: [{ data: Object.values(ct), backgroundColor: ['#611232', '#A57F2C', '#D4AF37', '#7E183B', '#4D4D4D'] }] },
-            options: { plugins: { title: { display: true, text: tit, color: '#611232' } }, maintainAspectRatio: false }
-        });
-    };
-    dG('g1', 'Dependencia', 'Impacto por Dependencia', 'bar');
-    dG('g2', 'Tema', 'Distribución por Tema', 'doughnut');
-    dG('g3', 'Estatus', 'Análisis de Sentimiento', 'pie');
-    dG('g4', 'Medio', 'Presencia en Medios', 'bar');
-}
+        function getWeekHtml(date) {
+            const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+            const dayNum = d.getUTCDay() || 7;
+            d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+            const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+            const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+            return d.getUTCFullYear() + "-W" + String(weekNo).padStart(2, '0');
+        }
 
-function genPDF() {
-    html2pdf().set({ margin: 0.2, filename: 'Monitoreo.pdf', jsPDF: { orientation: 'landscape' } }).from(document.body).save();
-}
-window.onload = start;
-</script>
+        function renderF() {
+            const c = document.getElementById('f-cont');
+            c.innerHTML = "";
+            vCols.forEach(col => {
+                const d = document.createElement('div');
+                d.className = 'f-group';
+                if (col === "Dependencia") {
+                    d.innerHTML = `<label>${col} (Cmd/Ctrl + Click)</label><select id="sel-${col}" multiple onchange="refresh()"></select>`;
+                } else {
+                    d.innerHTML = `<label>${col}</label><select id="sel-${col}" onchange="refresh()"></select>`;
+                }
+                c.appendChild(d);
+            });
+        }
+
+        function refresh() {
+            let f = {};
+            vCols.forEach(col => {
+                const el = document.getElementById(`sel-${col}`);
+                if (col === "Dependencia") {
+                    f[col] = Array.from(el.selectedOptions).map(o => o.value);
+                    if (f[col].length === 0) f[col] = "Todos";
+                } else {
+                    f[col] = el.value || "Todos";
+                }
+            });
+
+            const gran = document.getElementById('f-gran').value;
+            const xLimit = parseInt(document.getElementById('an-x').value) || 10;
+            const xMode = document.getElementById('an-mode').value;
+
+            let fil = rData.filter(d => {
+                return vCols.every(col => {
+                    const filterVal = f[col];
+                    if (filterVal === "Todos" || (Array.isArray(filterVal) && (filterVal.includes("Todos") || filterVal.length === 0))) return true;
+
+                    if (col === "Dependencia" && Array.isArray(filterVal)) {
+                        return filterVal.includes(String(d[col]));
+                    }
+                    if (col === "Fecha") {
+                        if (gran === 'year') return d._year === filterVal;
+                        if (gran === 'month') return d._month === filterVal;
+                        if (gran === 'week') return d._week === filterVal;
+                        return d.Fecha === filterVal;
+                    }
+                    return String(d[col]) === filterVal;
+                });
+            });
+
+            document.getElementById('t-reg').innerText = fil.length.toLocaleString();
+
+            vCols.forEach(col => {
+                const s = document.getElementById(`sel-${col}`);
+                if (!s) return;
+                const act = f[col];
+
+                // Filtros dependientes: cada dropdown muestra solo valores que existen
+                // considerando el resto de los filtros activos.
+                let sourceItems = rData.filter(d => {
+                    return vCols.every(k => {
+                        if (k === col) return true;
+                        const kv = f[k];
+                        if (kv === "Todos" || (Array.isArray(kv) && (kv.includes("Todos") || kv.length === 0))) return true;
+                        if (k === "Dependencia" && Array.isArray(kv)) return kv.includes(String(d[k]));
+                        if (k === "Fecha") {
+                            if (gran === 'year') return d._year === kv;
+                            if (gran === 'month') return d._month === kv;
+                            if (gran === 'week') return d._week === kv;
+                            return d.Fecha === kv;
+                        }
+                        return String(d[k]) === kv;
+                    });
+                });
+
+                let av;
+                if (col === "Fecha") {
+                    if (gran === 'year') {
+                        const set = [...new Set(sourceItems.map(d => d._year))].sort().reverse();
+                        av = set.map(v => ({ v, l: v }));
+                    } else if (gran === 'month') {
+                        const set = [...new Set(sourceItems.map(d => JSON.stringify({ v: d._month, l: d._monthLabel })))].sort().reverse();
+                        av = set.map(s => JSON.parse(s));
+                    } else if (gran === 'week') {
+                        const set = [...new Set(sourceItems.map(d => d._week))].sort().reverse();
+                        av = set.map(v => ({ v, l: v }));
+                    } else {
+                        // Día
+                        const set = [...new Set(sourceItems.map(d => JSON.stringify({ v: d.Fecha, l: d._dayLabel })))].sort((a, b) => {
+                            const da = JSON.parse(a).v.split('/').reverse().join('');
+                            const db = JSON.parse(b).v.split('/').reverse().join('');
+                            return db.localeCompare(da);
+                        });
+                        av = set.map(s => JSON.parse(s));
+                    }
+                } else {
+                    const set = [...new Set(sourceItems.map(d => String(d[col])))].sort();
+                    av = set.filter(v => col !== "Región" || v !== "N/A").map(v => ({ v, l: v }));
+                }
+
+                let h = `<option value="Todos" ${(Array.isArray(act) ? act.includes("Todos") : act === "Todos") ? 'selected' : ''}>-- Todos (${av.length}) --</option>`;
+                av.forEach(o => {
+                    const isSelected = Array.isArray(act) ? act.includes(o.v) : o.v === act;
+                    h += `<option value="${o.v}" ${isSelected ? 'selected' : ''}>${o.l}</option>`;
+                });
+                s.innerHTML = h;
+            });
+
+            // Generar resumen de filtros activos para los títulos
+            const getFSummary = () => {
+                let s = [];
+                vCols.forEach(col => {
+                    const val = f[col];
+                    if (val !== "Todos" && (!Array.isArray(val) || (val.length > 0 && !val.includes("Todos")))) {
+                        const displayVal = Array.isArray(val) ? (val.length > 2 ? `${val.length} selecc.` : val.join(', ')) : val;
+                        s.push(`${col}: ${displayVal}`);
+                    }
+                });
+                return s.length > 0 ? ` [${s.join(' | ')}]` : "";
+            };
+            const fSummary = getFSummary();
+
+            const dG = (id, campo, tit, tipo) => {
+                const ctx = document.getElementById(id);
+                const ct = {};
+                fil.forEach(d => {
+                    const v = String(d[campo] || "N/A").trim();
+                    if (v) ct[v] = (ct[v] || 0) + 1;
+                });
+
+                if (vCharts[id]) vCharts[id].destroy();
+
+                let sorted = Object.keys(ct).sort((a, b) => ct[b] - ct[a]);
+                if (xMode === 'bottom') sorted = sorted.reverse();
+
+                const labels = sorted.slice(0, xLimit);
+                const data = labels.map(l => ct[l]);
+
+                let bgColors = ['#611232', '#A57F2C', '#D4AF37', '#7E183B', '#4D4D4D', '#C0C0C0', '#800000', '#B8860B', '#808080', '#000000', '#2a9d8f', '#e63946', '#ffb703'];
+                if (campo === 'Estatus') {
+                    const colorMap = {
+                        "Negativa": "#e63946",
+                        "Positiva": "#2a9d8f",
+                        "Informativa": "#ffb703",
+                        "Neutras": "#808080",
+                        "N/A": "#ccc"
+                    };
+                    bgColors = labels.map(l => colorMap[l] || "#4D4D4D");
+                }
+
+                vCharts[id] = new Chart(ctx, {
+                    type: tipo,
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Registros',
+                            data: data,
+                            backgroundColor: bgColors
+                        }]
+                    },
+                    options: {
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: tit + fSummary,
+                                color: '#611232',
+                                font: { size: 14, weight: 'bold' }
+                            },
+                            legend: { display: tipo !== 'bar' }
+                        },
+                        maintainAspectRatio: false,
+                        scales: tipo === 'bar' ? { y: { beginAtZero: true } } : {}
+                    }
+                });
+            };
+
+            dG('g1', 'Dependencia', 'Impacto por Dependencia', 'bar');
+            dG('g2', 'Tema', 'Distribución por Tema', 'bar');
+            dG('g3', 'Estatus', 'Análisis de Sentimiento', 'pie');
+            dG('g4', 'Medio', 'Presencia en Medios', 'bar');
+            dG('g6', 'Género', 'Distribución por Género', 'bar');
+
+            // Gráfico de Seguimiento Temporal (Line)
+            const dLine = () => {
+                const ctx = document.getElementById('g5');
+                const campoFecha = gran === 'year' ? '_year' : (gran === 'month' ? '_month' : (gran === 'week' ? '_week' : 'Fecha'));
+                const labelFecha = gran === 'year' ? '_year' : (gran === 'month' ? '_monthLabel' : (gran === 'week' ? '_week' : '_dayLabel'));
+
+                const mapping = {};
+                fil.forEach(d => {
+                    const k = d[campoFecha];
+                    if (!mapping[k]) mapping[k] = { label: d[labelFecha], count: 0 };
+                    mapping[k].count++;
+                });
+
+                const sortedKeys = Object.keys(mapping).sort();
+                const labels = sortedKeys.map(k => mapping[k].label);
+                const data = sortedKeys.map(k => mapping[k].count);
+
+                if (vCharts['g5']) vCharts['g5'].destroy();
+                vCharts['g5'] = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Volumen de Registros',
+                            data: data,
+                            borderColor: '#611232',
+                            backgroundColor: 'rgba(97, 18, 50, 0.1)',
+                            fill: true,
+                            tension: 0.3
+                        }]
+                    },
+                    options: {
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: 'Seguimiento Temporal de Registros' + fSummary,
+                                color: '#611232',
+                                font: { size: 16, weight: 'bold' }
+                            }
+                        },
+                        maintainAspectRatio: false,
+                        scales: { y: { beginAtZero: true } }
+                    }
+                });
+            };
+            dLine();
+        }
+
+        function genPDF() {
+            html2pdf().set({ margin: 0.2, filename: 'Monitoreo.pdf', jsPDF: { orientation: 'landscape' } }).from(document.getElementById('dash')).save();
+        }
+
+        function toggleSidebar() {
+            const sb = document.getElementById('sidebar');
+            const btn = document.getElementById('toggle-btn');
+            sb.classList.toggle('collapsed');
+
+            if (sb.classList.contains('collapsed')) {
+                btn.innerHTML = "▶";
+                btn.title = "Mostrar Filtros";
+            } else {
+                btn.innerHTML = "◀";
+                btn.title = "Ocultar Filtros";
+            }
+
+            // Dar tiempo a la transición CSS antes de redimensionar gráficos
+            setTimeout(() => {
+                Object.values(vCharts).forEach(chart => chart.resize());
+            }, 310);
+        }
+
+        window.onload = start;
+    </script>
 </body>
+
 </html>
