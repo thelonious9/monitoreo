@@ -10,42 +10,30 @@
         :root {
             --guinda: #611232;
             --dorado: #A57F2C;
+            --guinda-light: #7E183B;
+            --bg: #f8f9fa;
         }
 
         body {
-            font-family: sans-serif;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             margin: 0;
-            background: #f4f4f4;
+            background: var(--bg);
             display: flex;
             flex-direction: column;
             height: 100vh;
+            color: #333;
         }
 
         .header {
             background: var(--guinda);
             color: white;
-            padding: 10px 15px;
+            padding: 12px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             border-bottom: 4px solid var(--dorado);
             z-index: 100;
-        }
-
-        .toggle-btn {
-            background: var(--dorado);
-            color: white;
-            border: none;
-            padding: 8px 12px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: bold;
-            margin-right: 15px;
-            transition: background 0.3s;
-        }
-
-        .toggle-btn:hover {
-            background: #8a6a25;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
         }
 
         .main {
@@ -56,470 +44,577 @@
         }
 
         .sidebar {
-            width: 300px;
+            width: 320px;
             background: white;
             padding: 20px;
-            border-right: 1px solid #ccc;
+            border-right: 1px solid #dee2e6;
             overflow-y: auto;
             transition: all 0.3s ease;
             flex-shrink: 0;
-            position: relative;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.05);
         }
 
         .sidebar.collapsed {
             width: 0;
             padding: 0;
-            border: none;
             opacity: 0;
             pointer-events: none;
         }
 
         .floating-toggle {
             position: fixed;
-            left: 280px;
+            left: 300px;
             top: 50%;
             transform: translateY(-50%);
             background: var(--guinda);
             color: white;
             border: 2px solid var(--dorado);
             border-radius: 50%;
-            width: 40px;
-            height: 40px;
+            width: 36px;
+            height: 36px;
             cursor: pointer;
             z-index: 1000;
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-            transition: left 0.3s ease, background 0.3s;
-            font-size: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            transition: left 0.3s ease;
         }
 
-        .floating-toggle:hover {
-            background: var(--dorado);
-        }
-
-        .collapsed+.floating-toggle,
         .sidebar.collapsed+.floating-toggle {
             left: 10px;
         }
 
         .content {
             flex: 1;
-            padding: 20px;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            grid-auto-rows: min-content;
-            gap: 20px;
+            padding: 24px;
             overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        /* KPI Grid */
+        .kpi-container {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+        }
+
+        .kpi-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            border-left: 5px solid var(--guinda);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .kpi-card h4 {
+            margin: 0;
+            font-size: 13px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .kpi-card .val {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--guinda);
+            margin-top: 5px;
+        }
+
+        .kpi-card .sub {
+            font-size: 11px;
+            color: #888;
+            margin-top: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Charts Grid */
+        .charts-row {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 24px;
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 24px;
         }
 
         .card {
             background: white;
-            padding: 15px;
+            padding: 20px;
             border-radius: 8px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-            min-height: 380px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            min-height: 400px;
+            display: flex;
+            flex-direction: column;
         }
 
         .card.full {
-            grid-column: 1 / -1;
+            grid-column: span 2;
         }
 
         .f-group {
-            margin-bottom: 12px;
-            background: #f9f9f9;
-            padding: 8px;
-            border-radius: 4px;
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .f-group:last-child {
+            border-bottom: none;
         }
 
         .f-group label {
             display: block;
             font-size: 11px;
             font-weight: bold;
-            color: #611232;
+            color: var(--guinda);
             text-transform: uppercase;
-            margin-bottom: 4px;
+            margin-bottom: 6px;
         }
 
         .f-group select,
         .f-group input {
             width: 100%;
-            padding: 8px;
+            padding: 10px;
             border-radius: 4px;
-            border: 1px solid #ccc;
-            box-sizing: border-box;
+            border: 1px solid #ced4da;
+            background: #fff;
+            font-size: 13px;
         }
 
         .f-group select[multiple] {
-            height: 100px;
+            height: 120px;
         }
 
         .analytics-ctrl {
+            background: #f1f3f5;
+            padding: 15px;
+            border-radius: 8px;
             margin-bottom: 20px;
-            background: #eee;
-            padding: 10px;
-            border-radius: 4px;
-            border-left: 4px solid var(--guinda);
+            border: 1px solid #e9ecef;
         }
     </style>
 </head>
 
 <body>
     <div class="header">
-        <h2 style="margin:0">Monitoreo de Medios - GEH</h2>
-        <div>Registros: <span id="t-reg">0</span> | <button onclick="genPDF()"
-                style="background:var(--dorado); color:white; border:none; padding:8px 15px; border-radius:4px; cursor:pointer; font-weight:bold;">PDF</button>
+        <h2 style="margin:0">Monitoreo de Medios - <span style="color:var(--dorado)">GEH</span></h2>
+        <div>
+            <button onclick="genPDF()"
+                style="background:var(--dorado); color:white; border:none; padding:8px 18px; border-radius:4px; cursor:pointer; font-weight:bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">Descargar
+                Reporte (PDF)</button>
         </div>
     </div>
     <div class="main">
         <div class="sidebar" id="sidebar">
-            <h3 style="color:var(--guinda); margin-top:0; border-bottom:2px solid var(--dorado); padding-bottom:10px;">
-                Filtros de Control</h3>
+            <h3
+                style="color:var(--guinda); margin-top:0; border-bottom:2px solid var(--dorado); padding-bottom:12px; font-size: 18px;">
+                Panel de Filtros</h3>
+
             <div class="analytics-ctrl">
                 <div class="f-group">
-                    <label>Top / Bottom X</label>
-                    <div style="display:flex; gap:5px;">
-                        <input type="number" id="an-x" value="10" min="1" onchange="refresh()" style="width:60px">
-                        <select id="an-mode" onchange="refresh()">
-                            <option value="top">Más Frecuentes (Top)</option>
-                            <option value="bottom">Menos Frecuentes (Bottom)</option>
+                    <label>Elegir Rango / Top</label>
+                    <div style="display:flex; gap:8px;">
+                        <input type="number" id="an-x" value="10" min="1" onchange="applyFilters()" style="width:65px">
+                        <select id="an-mode" onchange="applyFilters()">
+                            <option value="top">Los "X" más</option>
+                            <option value="bottom">Los "X" menos</option>
                         </select>
                     </div>
                 </div>
+            </div>
+
+            <div id="f-cont">
+                <!-- Filtro Maestro -->
                 <div class="f-group">
-                    <label>Granularidad Fecha</label>
-                    <select id="f-gran" onchange="refresh()">
-                        <option value="day">Día</option>
-                        <option value="week">Semana</option>
-                        <option value="month" selected>Mes</option>
-                        <option value="year">Año</option>
-                    </select>
+                    <label id="lbl-Clasificación">Clasificación</label>
+                    <select id="sel-Clasificación" onchange="updateFilters('Clasificación')"></select>
+                </div>
+                <!-- Filtros Dependientes -->
+                <div class="f-group">
+                    <label id="lbl-Fecha">Rango de Fecha</label>
+                    <select id="sel-Fecha" onchange="applyFilters()"></select>
+                </div>
+                <div class="f-group">
+                    <label id="lbl-Dependencia">Dependencia</label>
+                    <select id="sel-Dependencia" multiple onchange="applyFilters()"></select>
+                </div>
+                <div id="f-dynamic-cont"></div>
+            </div>
+
+            <button onclick="location.reload()"
+                style="width:100%; margin-top:20px; padding:12px; cursor:pointer; border-radius: 4px; border: 1px solid #ced4da; background: #fff; font-weight: bold; color: #666;">Restablecer
+                Tablero</button>
+        </div>
+        <button class="floating-toggle" id="toggle-btn" onclick="toggleSidebar()" title="Toggle Sidebar">◀</button>
+
+        <div class="content" id="dash">
+            <!-- KPIs Header -->
+            <div class="kpi-container">
+                <div class="kpi-card">
+                    <h4>Total Registros</h4>
+                    <div class="val" id="kpi-total">0</div>
+                    <div class="sub">Universo filtrado</div>
+                </div>
+                <div class="kpi-card">
+                    <h4>Top Dependencia</h4>
+                    <div class="val" id="kpi-dep">-</div>
+                    <div class="sub" id="kpi-dep-val">0 menciones</div>
+                </div>
+                <div class="kpi-card">
+                    <h4>Top Municipio</h4>
+                    <div class="val" id="kpi-mun">-</div>
+                    <div class="sub" id="kpi-mun-val">0 menciones</div>
+                </div>
+                <div class="kpi-card">
+                    <h4>Canal Principal</h4>
+                    <div class="val" id="kpi-canal">-</div>
+                    <div class="sub" id="kpi-canal-val">0% del total</div>
                 </div>
             </div>
-            <div id="f-cont"></div>
-            <button onclick="location.reload()"
-                style="width:100%; margin-top:15px; padding:10px; cursor:pointer; border-radius: 4px; border: 1px solid #ccc;">Limpiar
-                Filtros</button>
-        </div>
-        <button class="floating-toggle" id="toggle-btn" onclick="toggleSidebar()"
-            title="Mostrar/Ocultar Filtros">◀</button>
-        <div class="content" id="dash">
-            <div class="card full"><canvas id="g5"></canvas></div>
-            <div class="card"><canvas id="g1"></canvas></div>
-            <div class="card"><canvas id="g2"></canvas></div>
-            <div class="card"><canvas id="g3"></canvas></div>
-            <div class="card"><canvas id="g4"></canvas></div>
-            <div class="card"><canvas id="g6"></canvas></div>
+
+            <!-- Upper Body: Global Charts -->
+            <div class="charts-row">
+                <div class="card">
+                    <canvas id="g_doughnut"></canvas>
+                </div>
+                <div class="card">
+                    <canvas id="g_timeline"></canvas>
+                </div>
+            </div>
+
+            <!-- Lower Body: Detailed Rankings -->
+            <div class="charts-grid">
+                <div class="card"><canvas id="g_tema"></canvas></div>
+                <div class="card"><canvas id="g_estatus"></canvas></div>
+                <div class="card"><canvas id="g_medio"></canvas></div>
+                <div class="card"><canvas id="g_canal"></canvas></div>
+                <div class="card"><canvas id="g_region"></canvas></div>
+                <div class="card"><canvas id="g_genero"></canvas></div>
+            </div>
         </div>
     </div>
+
     <script>
-        let rData = []; let vCharts = {};
-        const vCols = ["Fecha", "Dependencia", "Canal", "Medio", "Tema", "Estatus", "Municipio", "Región", "Agrupación", "Cobertura", "Nivel", "Género"];
-        const meses = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
+        let rData = [];
+        let vCharts = {};
+        const vColsHierarchy = ["Clasificación", "Dependencia", "Agrupación", "Canal", "Estatus", "Región", "Municipio"];
+        const institutionalPalette = ['#611232', '#A57F2C', '#7E183B', '#D4AF37', '#4D4D4D', '#C0C0C0', '#800000', '#B8860B', '#808080', '#2a9d8f', '#ffb703', '#e63946'];
 
         async function start() {
             try {
                 const res = await fetch('./Data/datos.json');
-                if (!res.ok) throw new Error();
                 const raw = await res.json();
-
                 rData = raw.map(d => {
                     if (!d.Fecha) return null;
                     const parts = d.Fecha.split('/');
                     if (parts.length < 3) return null;
                     const [dd, mm, yyyy] = parts;
                     const dateObj = new Date(yyyy, mm - 1, dd);
-                    const mName = meses[parseInt(mm) - 1];
-                    const yShort = String(yyyy).slice(-2);
-
                     return {
                         ...d,
                         _date: dateObj,
-                        _year: String(yyyy),
-                        _month: `${yyyy}-${String(mm).padStart(2, '0')}`,
-                        _monthLabel: `${mName}-${yShort}`,
-                        _dayLabel: `${parseInt(dd)}-${mName}-${yShort}`,
                         _week: getWeekHtml(dateObj),
-                        "Cobertura": d["Cobertura"] || "N/A",
-                        "Nivel": d["Nivel"] || "N/A",
-                        "Dependencia": d["Dependencia"] || "N/A",
-                        "Tema": d["Tema"] || "N/A",
-                        "Estatus": d["Estatus"] || "Informativa",
-                        "Medio": d["Medio"] || "N/A",
-                        "Canal": d["Canal"] || "N/A",
-                        "Región": d["Región"] || "N/A",
-                        "Género": d["Género"] || "N/A"
+                        _month: `${yyyy}-${String(mm).padStart(2, '0')}`,
+                        _monthLabel: `${["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"][mm - 1]}-${String(yyyy).slice(-2)}`,
+                        _dayLabel: `${parseInt(dd)}-${["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"][mm - 1]}`
                     };
-                }).filter(d => d !== null);
+                }).filter(x => x);
 
-                renderF();
-                refresh();
+                initFilterStructure();
+                updateFilters('Clasificación'); // Trigger initial cascade
             } catch (e) {
                 console.error(e);
-                document.getElementById('dash').innerHTML = `<h2 style="grid-column:1/-1;text-align:center;padding-top:50px;">⚠️ Error: Verifica datos.json</h2>`;
+                document.getElementById('dash').innerHTML = "<h2>Error cargando datos.</h2>";
             }
         }
 
         function getWeekHtml(date) {
             const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-            const dayNum = d.getUTCDay() || 7;
-            d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+            d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
             const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
             const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
-            return d.getUTCFullYear() + "-W" + String(weekNo).padStart(2, '0');
+            return `${d.getUTCFullYear()}-W${String(weekNo).padStart(2, '0')}`;
         }
 
-        function renderF() {
-            const c = document.getElementById('f-cont');
-            c.innerHTML = "";
-            vCols.forEach(col => {
-                const d = document.createElement('div');
-                d.className = 'f-group';
-                if (col === "Dependencia") {
-                    d.innerHTML = `<label>${col} (Cmd/Ctrl + Click)</label><select id="sel-${col}" multiple onchange="refresh()"></select>`;
-                } else {
-                    d.innerHTML = `<label>${col}</label><select id="sel-${col}" onchange="refresh()"></select>`;
-                }
-                c.appendChild(d);
+        function initFilterStructure() {
+            const container = document.getElementById('f-dynamic-cont');
+            container.innerHTML = "";
+            ["Agrupación", "Canal", "Estatus", "Región", "Municipio"].forEach(col => {
+                const div = document.createElement('div');
+                div.className = 'f-group';
+                div.innerHTML = `<label id="lbl-${col}">${col}</label><select id="sel-${col}" onchange="applyFilters()"></select>`;
+                container.appendChild(div);
             });
         }
 
-        function refresh() {
-            let f = {};
-            vCols.forEach(col => {
+        /**
+         * LÓGICA DE CASCADA: updateFilters
+         * Actualiza los selectores dependientes basándose en el orden jerárquico.
+         */
+        function updateFilters(changedCol) {
+            const f = getCurrentFilterState();
+
+            // Re-render each dropdown options based on the items available after preceding filters
+            ["Fecha", ...vColsHierarchy].forEach((col, idx) => {
+                // If it's a higher level or the item that changed, we don't necessarily update it from the bottom-up results
+                // We update EVERYTHING from top to bottom to maintain the cascade
+                const s = document.getElementById(`sel-${col}`);
+                if (!s) return;
+
+                // To find labels for this column, we consider all filters ABOVE it
+                let sourceItems = rData.filter(d => {
+                    // Filter by Fecha (Global)
+                    if (col !== "Fecha" && f.Fecha !== "Todos") {
+                        const dStr = d.Fecha;
+                        if (dStr !== f.Fecha && d._year !== f.Fecha && d._month !== f.Fecha && d._week !== f.Fecha) return false;
+                    }
+                    // Filter by Hierarchy
+                    for (let i = 0; i < vColsHierarchy.indexOf(col); i++) {
+                        const prevCol = vColsHierarchy[i];
+                        const val = f[prevCol];
+                        if (val === "Todos" || (Array.isArray(val) && val.length === 0)) continue;
+                        if (Array.isArray(val)) {
+                            if (!val.includes(String(d[prevCol]))) return false;
+                        } else {
+                            if (String(d[prevCol]) !== val) return false;
+                        }
+                    }
+                    return true;
+                });
+
+                renderSelectOptions(s, col, sourceItems, f[col]);
+            });
+
+            applyFilters();
+        }
+
+        function renderSelectOptions(select, col, items, activeValue) {
+            let optionsSet = {};
+            if (col === "Fecha") {
+                // Special case for Fecha: always show all available in rData to avoid locking yourself out
+                const allDates = [...new Set(rData.map(d => d._month))].sort().reverse();
+                select.innerHTML = `<option value="Todos">-- Todos los meses --</option>` +
+                    allDates.map(m => `<option value="${m}" ${m === activeValue ? 'selected' : ''}>${m}</option>`).join('');
+                return;
+            }
+
+            items.forEach(d => {
+                const v = String(d[col] || "N/A");
+                optionsSet[v] = (optionsSet[v] || 0) + 1;
+            });
+
+            const sortedKeys = Object.keys(optionsSet).sort((a, b) => optionsSet[b] - optionsSet[a]);
+            let html = `<option value="Todos">-- Todos (${sortedKeys.length}) --</option>`;
+            sortedKeys.forEach(k => {
+                const isSelected = Array.isArray(activeValue) ? activeValue.includes(k) : k === activeValue;
+                html += `<option value="${k}" ${isSelected ? 'selected' : ''}>${k} (${optionsSet[k]})</option>`;
+            });
+            select.innerHTML = html;
+
+            // Update Label for multi-select
+            const lbl = document.getElementById(`lbl-${col}`);
+            if (lbl && Array.isArray(activeValue)) {
+                lbl.innerText = `${col} (${activeValue.length} selecc.)`;
+            }
+        }
+
+        function getCurrentFilterState() {
+            let state = { Fecha: document.getElementById('sel-Fecha').value || "Todos" };
+            vColsHierarchy.forEach(col => {
                 const el = document.getElementById(`sel-${col}`);
+                if (!el) return;
                 if (col === "Dependencia") {
-                    f[col] = Array.from(el.selectedOptions).map(o => o.value);
-                    if (f[col].length === 0) f[col] = "Todos";
+                    state[col] = Array.from(el.selectedOptions).map(o => o.value).filter(v => v !== "Todos");
                 } else {
-                    f[col] = el.value || "Todos";
+                    state[col] = el.value || "Todos";
                 }
             });
+            return state;
+        }
 
-            const gran = document.getElementById('f-gran').value;
+        /**
+         * FUNCIÓN PRINCIPAL: applyFilters
+         * Filtra los datos y dispara el renderizado de KPIs y Gráficos.
+         */
+        function applyFilters() {
+            const f = getCurrentFilterState();
+
+            // Datos para el gráfico global (solo fecha)
+            const dateFil = rData.filter(d => f.Fecha === "Todos" || d._month === f.Fecha);
+
+            // Datos para el resto (cascada completa)
+            const fil = rData.filter(d => {
+                if (f.Fecha !== "Todos" && d._month !== f.Fecha) return false;
+                return vColsHierarchy.every(col => {
+                    const val = f[col];
+                    if (val === "Todos" || (Array.isArray(val) && val.length === 0)) return true;
+                    return Array.isArray(val) ? val.includes(String(d[col])) : String(d[col]) === val;
+                });
+            });
+
+            renderKPIs(fil);
+            renderDashboardCharts(fil, dateFil);
+        }
+
+        function renderKPIs(data) {
+            document.getElementById('kpi-total').innerText = data.length.toLocaleString();
+
+            const getTop = (key) => {
+                const counts = {};
+                data.forEach(d => { const v = d[key]; counts[v] = (counts[v] || 0) + 1; });
+                const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+                return sorted[0] || ["-", 0];
+            };
+
+            const [topDep, countDep] = getTop('Dependencia');
+            document.getElementById('kpi-dep').innerText = topDep;
+            document.getElementById('kpi-dep-val').innerText = `${countDep} menciones`;
+
+            const [topMun, countMun] = getTop('Municipio');
+            document.getElementById('kpi-mun').innerText = topMun;
+            document.getElementById('kpi-mun-val').innerText = `${countMun} menciones`;
+
+            const [topCan, countCan] = getTop('Canal');
+            const pct = data.length > 0 ? ((countCan / data.length) * 100).toFixed(1) : 0;
+            document.getElementById('kpi-canal').innerText = topCan;
+            document.getElementById('kpi-canal-val').innerText = `${pct}% del volumen`;
+        }
+
+        function renderDashboardCharts(data, dateData) {
+            // Doughnut Central (Clasificación - solo sensible a fecha)
+            renderChart('g_doughnut', dateData, 'Clasificación', 'Universo por Clasificación', 'doughnut');
+
+            // Seguimiento Temporal Inteligente
+            renderSmartTimeline(data);
+
+            // Rankings
             const xLimit = parseInt(document.getElementById('an-x').value) || 10;
             const xMode = document.getElementById('an-mode').value;
 
-            let fil = rData.filter(d => {
-                return vCols.every(col => {
-                    const filterVal = f[col];
-                    if (filterVal === "Todos" || (Array.isArray(filterVal) && (filterVal.includes("Todos") || filterVal.length === 0))) return true;
-
-                    if (col === "Dependencia" && Array.isArray(filterVal)) {
-                        return filterVal.includes(String(d[col]));
-                    }
-                    if (col === "Fecha") {
-                        if (gran === 'year') return d._year === filterVal;
-                        if (gran === 'month') return d._month === filterVal;
-                        if (gran === 'week') return d._week === filterVal;
-                        return d.Fecha === filterVal;
-                    }
-                    return String(d[col]) === filterVal;
-                });
-            });
-
-            document.getElementById('t-reg').innerText = fil.length.toLocaleString();
-
-            vCols.forEach(col => {
-                const s = document.getElementById(`sel-${col}`);
-                if (!s) return;
-                const act = f[col];
-
-                // Filtros dependientes: cada dropdown muestra solo valores que existen
-                // considerando el resto de los filtros activos.
-                let sourceItems = rData.filter(d => {
-                    return vCols.every(k => {
-                        if (k === col) return true;
-                        const kv = f[k];
-                        if (kv === "Todos" || (Array.isArray(kv) && (kv.includes("Todos") || kv.length === 0))) return true;
-                        if (k === "Dependencia" && Array.isArray(kv)) return kv.includes(String(d[k]));
-                        if (k === "Fecha") {
-                            if (gran === 'year') return d._year === kv;
-                            if (gran === 'month') return d._month === kv;
-                            if (gran === 'week') return d._week === kv;
-                            return d.Fecha === kv;
-                        }
-                        return String(d[k]) === kv;
-                    });
-                });
-
-                let av;
-                if (col === "Fecha") {
-                    if (gran === 'year') {
-                        const set = [...new Set(sourceItems.map(d => d._year))].sort().reverse();
-                        av = set.map(v => ({ v, l: v }));
-                    } else if (gran === 'month') {
-                        const set = [...new Set(sourceItems.map(d => JSON.stringify({ v: d._month, l: d._monthLabel })))].sort().reverse();
-                        av = set.map(s => JSON.parse(s));
-                    } else if (gran === 'week') {
-                        const set = [...new Set(sourceItems.map(d => d._week))].sort().reverse();
-                        av = set.map(v => ({ v, l: v }));
-                    } else {
-                        // Día
-                        const set = [...new Set(sourceItems.map(d => JSON.stringify({ v: d.Fecha, l: d._dayLabel })))].sort((a, b) => {
-                            const da = JSON.parse(a).v.split('/').reverse().join('');
-                            const db = JSON.parse(b).v.split('/').reverse().join('');
-                            return db.localeCompare(da);
-                        });
-                        av = set.map(s => JSON.parse(s));
-                    }
-                } else {
-                    const set = [...new Set(sourceItems.map(d => String(d[col])))].sort();
-                    av = set.filter(v => col !== "Región" || v !== "N/A").map(v => ({ v, l: v }));
-                }
-
-                let h = `<option value="Todos" ${(Array.isArray(act) ? act.includes("Todos") : act === "Todos") ? 'selected' : ''}>-- Todos (${av.length}) --</option>`;
-                av.forEach(o => {
-                    const isSelected = Array.isArray(act) ? act.includes(o.v) : o.v === act;
-                    h += `<option value="${o.v}" ${isSelected ? 'selected' : ''}>${o.l}</option>`;
-                });
-                s.innerHTML = h;
-            });
-
-            // Generar resumen de filtros activos para los títulos
-            const getFSummary = () => {
-                let s = [];
-                vCols.forEach(col => {
-                    const val = f[col];
-                    if (val !== "Todos" && (!Array.isArray(val) || (val.length > 0 && !val.includes("Todos")))) {
-                        const displayVal = Array.isArray(val) ? (val.length > 2 ? `${val.length} selecc.` : val.join(', ')) : val;
-                        s.push(`${col}: ${displayVal}`);
-                    }
-                });
-                return s.length > 0 ? ` [${s.join(' | ')}]` : "";
-            };
-            const fSummary = getFSummary();
-
-            const dG = (id, campo, tit, tipo) => {
-                const ctx = document.getElementById(id);
-                const ct = {};
-                fil.forEach(d => {
-                    const v = String(d[campo] || "N/A").trim();
-                    if (v) ct[v] = (ct[v] || 0) + 1;
-                });
-
-                if (vCharts[id]) vCharts[id].destroy();
-
-                let sorted = Object.keys(ct).sort((a, b) => ct[b] - ct[a]);
-                if (xMode === 'bottom') sorted = sorted.reverse();
-
-                const labels = sorted.slice(0, xLimit);
-                const data = labels.map(l => ct[l]);
-
-                let bgColors = ['#611232', '#A57F2C', '#D4AF37', '#7E183B', '#4D4D4D', '#C0C0C0', '#800000', '#B8860B', '#808080', '#000000', '#2a9d8f', '#e63946', '#ffb703'];
-                if (campo === 'Estatus') {
-                    const colorMap = {
-                        "Negativa": "#e63946",
-                        "Positiva": "#2a9d8f",
-                        "Informativa": "#ffb703",
-                        "Neutras": "#808080",
-                        "N/A": "#ccc"
-                    };
-                    bgColors = labels.map(l => colorMap[l] || "#4D4D4D");
-                }
-
-                vCharts[id] = new Chart(ctx, {
-                    type: tipo,
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            label: 'Registros',
-                            data: data,
-                            backgroundColor: bgColors
-                        }]
-                    },
-                    options: {
-                        plugins: {
-                            title: {
-                                display: true,
-                                text: tit + fSummary,
-                                color: '#611232',
-                                font: { size: 14, weight: 'bold' }
-                            },
-                            legend: { display: tipo !== 'bar' }
-                        },
-                        maintainAspectRatio: false,
-                        scales: tipo === 'bar' ? { y: { beginAtZero: true } } : {}
-                    }
-                });
-            };
-
-            dG('g1', 'Dependencia', 'Impacto por Dependencia', 'bar');
-            dG('g2', 'Tema', 'Distribución por Tema', 'bar');
-            dG('g3', 'Estatus', 'Análisis de Sentimiento', 'pie');
-            dG('g4', 'Medio', 'Presencia en Medios', 'bar');
-            dG('g6', 'Género', 'Distribución por Género', 'bar');
-
-            // Gráfico de Seguimiento Temporal (Line)
-            const dLine = () => {
-                const ctx = document.getElementById('g5');
-                const campoFecha = gran === 'year' ? '_year' : (gran === 'month' ? '_month' : (gran === 'week' ? '_week' : 'Fecha'));
-                const labelFecha = gran === 'year' ? '_year' : (gran === 'month' ? '_monthLabel' : (gran === 'week' ? '_week' : '_dayLabel'));
-
-                const mapping = {};
-                fil.forEach(d => {
-                    const k = d[campoFecha];
-                    if (!mapping[k]) mapping[k] = { label: d[labelFecha], count: 0 };
-                    mapping[k].count++;
-                });
-
-                const sortedKeys = Object.keys(mapping).sort();
-                const labels = sortedKeys.map(k => mapping[k].label);
-                const data = sortedKeys.map(k => mapping[k].count);
-
-                if (vCharts['g5']) vCharts['g5'].destroy();
-                vCharts['g5'] = new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            label: 'Volumen de Registros',
-                            data: data,
-                            borderColor: '#611232',
-                            backgroundColor: 'rgba(97, 18, 50, 0.1)',
-                            fill: true,
-                            tension: 0.3
-                        }]
-                    },
-                    options: {
-                        plugins: {
-                            title: {
-                                display: true,
-                                text: 'Seguimiento Temporal de Registros' + fSummary,
-                                color: '#611232',
-                                font: { size: 16, weight: 'bold' }
-                            }
-                        },
-                        maintainAspectRatio: false,
-                        scales: { y: { beginAtZero: true } }
-                    }
-                });
-            };
-            dLine();
+            renderChart('g_tema', data, 'Tema', 'Principales Temas', 'bar', xLimit, xMode);
+            renderChart('g_estatus', data, 'Estatus', 'Sentimiento', 'pie');
+            renderChart('g_medio', data, 'Medio', 'Impacto por Medio', 'bar', xLimit, xMode);
+            renderChart('g_canal', data, 'Canal', 'Volumen por Canal', 'bar', xLimit, xMode);
+            renderChart('g_region', data, 'Región', 'Distribución Regional', 'bar', xLimit, xMode);
+            renderChart('g_genero', data, 'Género', 'Distribución de Género', 'bar', xLimit, xMode);
         }
 
-        function genPDF() {
-            html2pdf().set({ margin: 0.2, filename: 'Monitoreo.pdf', jsPDF: { orientation: 'landscape' } }).from(document.getElementById('dash')).save();
+        function renderChart(id, dataset, field, title, type, limit = 10, mode = 'top') {
+            const ctx = document.getElementById(id);
+            const counts = {};
+            dataset.forEach(d => { const v = String(d[field] || "N/A"); counts[v] = (counts[v] || 0) + 1; });
+
+            let sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+            if (mode === 'bottom' && type === 'bar') sorted = sorted.reverse();
+
+            const finalData = sorted.slice(0, limit);
+            const labels = finalData.map(x => x[0]);
+            const vals = finalData.map(x => x[1]);
+
+            if (vCharts[id]) vCharts[id].destroy();
+            vCharts[id] = new Chart(ctx, {
+                type: type,
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: vals,
+                        backgroundColor: institutionalPalette,
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    indexAxis: type === 'bar' ? 'y' : 'x',
+                    plugins: {
+                        title: { display: true, text: title, color: '#611232', font: { size: 14, weight: 'bold' } },
+                        legend: { display: type !== 'bar', position: 'right' }
+                    },
+                    maintainAspectRatio: false,
+                    scales: type === 'bar' ? { x: { beginAtZero: true } } : {}
+                }
+            });
+        }
+
+        function renderSmartTimeline(data) {
+            const ctx = document.getElementById('g_timeline');
+            if (data.length === 0) return;
+
+            // Determinar rango y agrupación
+            const dates = data.map(d => d._date).sort((a, b) => a - b);
+            const diffDays = (dates[dates.length - 1] - dates[0]) / (1000 * 60 * 60 * 24);
+
+            let groupKey = '_month';
+            let labelKey = '_monthLabel';
+            let title = "Seguimiento Mensual";
+
+            if (diffDays < 15) {
+                groupKey = 'Fecha'; labelKey = '_dayLabel'; title = "Seguimiento Diario";
+            } else if (diffDays <= 180) {
+                groupKey = '_week'; labelKey = '_week'; title = "Seguimiento Semanal";
+            }
+
+            const counts = {};
+            data.forEach(d => {
+                const k = d[groupKey];
+                if (!counts[k]) counts[k] = { label: d[labelKey], val: 0 };
+                counts[k].val++;
+            });
+
+            const sorted = Object.keys(counts).sort();
+            const labels = sorted.map(k => counts[k].label);
+            const vals = sorted.map(k => counts[k].val);
+
+            if (vCharts['g_timeline']) vCharts['g_timeline'].destroy();
+            vCharts['g_timeline'] = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Registros',
+                        data: vals,
+                        borderColor: '#611232',
+                        backgroundColor: 'rgba(97, 18, 50, 0.1)',
+                        fill: true,
+                        tension: 0.3
+                    }]
+                },
+                options: {
+                    plugins: {
+                        title: { display: true, text: title, color: '#611232', font: { size: 15, weight: 'bold' } }
+                    },
+                    maintainAspectRatio: false,
+                    scales: { y: { beginAtZero: true } }
+                }
+            });
         }
 
         function toggleSidebar() {
             const sb = document.getElementById('sidebar');
             const btn = document.getElementById('toggle-btn');
             sb.classList.toggle('collapsed');
+            btn.innerHTML = sb.classList.contains('collapsed') ? "▶" : "◀";
+            setTimeout(() => Object.values(vCharts).forEach(c => c.resize()), 310);
+        }
 
-            if (sb.classList.contains('collapsed')) {
-                btn.innerHTML = "▶";
-                btn.title = "Mostrar Filtros";
-            } else {
-                btn.innerHTML = "◀";
-                btn.title = "Ocultar Filtros";
-            }
-
-            // Dar tiempo a la transición CSS antes de redimensionar gráficos
-            setTimeout(() => {
-                Object.values(vCharts).forEach(chart => chart.resize());
-            }, 310);
+        function genPDF() {
+            const element = document.getElementById('dash');
+            html2pdf().set({
+                margin: 0.5,
+                filename: 'Reporte_Ejecutivo_Monitoreo.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, useCORS: true },
+                jsPDF: { unit: 'in', format: 'letter', orientation: 'landscape' }
+            }).from(element).save();
         }
 
         window.onload = start;
