@@ -295,6 +295,7 @@
 
             <!-- Lower Body: Detailed Rankings -->
             <div class="charts-grid">
+                <div class="card full"><canvas id="g_dependencia"></canvas></div>
                 <div class="card"><canvas id="g_tema"></canvas></div>
                 <div class="card"><canvas id="g_estatus"></canvas></div>
                 <div class="card"><canvas id="g_medio"></canvas></div>
@@ -309,7 +310,10 @@
         let rData = [];
         let vCharts = {};
         const vColsHierarchy = ["Clasificación", "Dependencia", "Agrupación", "Canal", "Estatus", "Región", "Municipio"];
-        const institutionalPalette = ['#611232', '#A57F2C', '#7E183B', '#D4AF37', '#4D4D4D', '#C0C0C0', '#800000', '#B8860B', '#808080', '#2a9d8f', '#ffb703', '#e63946'];
+        const paletteDefault = ['#611232', '#A57F2C', '#7E183B', '#D4AF37', '#4D4D4D', '#C0C0C0', '#800000', '#B8860B', '#808080', '#2a9d8f', '#ffb703', '#e63946'];
+        const palettePos = ['#2a9d8f', '#264653', '#2a9d8fbb', '#1d6f66', '#a7c957', '#386641'];
+        const paletteNeg = ['#e63946', '#d62828', '#e63946bb', '#9d0208', '#6a040f', '#370617'];
+        const paletteInf = ['#ffb703', '#fb8500', '#ffb703bb', '#e9c46a', '#f4a261', '#ee9b00'];
 
         async function start() {
             try {
@@ -464,7 +468,14 @@
             });
 
             renderKPIs(fil);
-            renderDashboardCharts(fil, dateFil);
+
+            // Lógica de Semáforo
+            let palette = paletteDefault;
+            if (f.Estatus === "Positiva") palette = palettePos;
+            else if (f.Estatus === "Negativa") palette = paletteNeg;
+            else if (f.Estatus === "Informativa") palette = paletteInf;
+
+            renderDashboardCharts(fil, dateFil, palette);
         }
 
         function renderKPIs(data) {
@@ -491,9 +502,9 @@
             document.getElementById('kpi-canal-val').innerText = `${pct}% del volumen`;
         }
 
-        function renderDashboardCharts(data, dateData) {
+        function renderDashboardCharts(data, dateData, palette) {
             // Doughnut Central (Clasificación - solo sensible a fecha)
-            renderChart('g_doughnut', dateData, 'Clasificación', 'Universo por Clasificación', 'doughnut');
+            renderChart('g_doughnut', dateData, 'Clasificación', 'Universo por Clasificación', 'doughnut', 15, 'top', palette);
 
             // Seguimiento Temporal Inteligente
             renderSmartTimeline(data);
@@ -502,15 +513,16 @@
             const xLimit = parseInt(document.getElementById('an-x').value) || 10;
             const xMode = document.getElementById('an-mode').value;
 
-            renderChart('g_tema', data, 'Tema', 'Principales Temas', 'bar', xLimit, xMode);
-            renderChart('g_estatus', data, 'Estatus', 'Sentimiento', 'pie');
-            renderChart('g_medio', data, 'Medio', 'Impacto por Medio', 'bar', xLimit, xMode);
-            renderChart('g_canal', data, 'Canal', 'Volumen por Canal', 'bar', xLimit, xMode);
-            renderChart('g_region', data, 'Región', 'Distribución Regional', 'bar', xLimit, xMode);
-            renderChart('g_genero', data, 'Género', 'Distribución de Género', 'bar', xLimit, xMode);
+            renderChart('g_dependencia', data, 'Dependencia', 'Impacto por Dependencia', 'bar', xLimit, xMode, palette);
+            renderChart('g_tema', data, 'Tema', 'Principales Temas', 'bar', xLimit, xMode, palette);
+            renderChart('g_estatus', data, 'Estatus', 'Sentimiento', 'pie', 10, 'top', palette);
+            renderChart('g_medio', data, 'Medio', 'Impacto por Medio', 'bar', xLimit, xMode, palette);
+            renderChart('g_canal', data, 'Canal', 'Volumen por Canal', 'bar', xLimit, xMode, palette);
+            renderChart('g_region', data, 'Región', 'Distribución Regional', 'bar', xLimit, xMode, palette);
+            renderChart('g_genero', data, 'Género', 'Distribución de Género', 'bar', xLimit, xMode, palette);
         }
 
-        function renderChart(id, dataset, field, title, type, limit = 10, mode = 'top') {
+        function renderChart(id, dataset, field, title, type, limit = 10, mode = 'top', palette = paletteDefault) {
             const ctx = document.getElementById(id);
             const counts = {};
             dataset.forEach(d => { const v = String(d[field] || "N/A"); counts[v] = (counts[v] || 0) + 1; });
@@ -529,7 +541,7 @@
                     labels: labels,
                     datasets: [{
                         data: vals,
-                        backgroundColor: institutionalPalette,
+                        backgroundColor: palette,
                         borderWidth: 1
                     }]
                 },
@@ -607,14 +619,39 @@
         }
 
         function genPDF() {
-            const element = document.getElementById('dash');
+            const f = getCurrentFilterState();
+            const summary = document.createElement('div');
+            summary.style = "padding: 30px; border-bottom: 2px solid #611232; margin-bottom: 25px; font-family: 'Segoe UI', sans-serif;";
+
+            const depLabel = f.Dependencia.length > 0 ? (f.Dependencia.length > 5 ? `${f.Dependencia.length} dependencias seleccionadas` : f.Dependencia.join(', ')) : "Todas";
+
+            summary.innerHTML = `
+                <h1 style="color: #611232; margin: 0 0 15px 0; font-size: 28px;">Reporte Ejecutivo de Monitoreo</h1>
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; font-size: 15px;">
+                    <div><strong>Clasificación:</strong> ${f.Clasificación}</div>
+                    <div><strong>Periodo:</strong> ${f.Fecha === 'Todos' ? 'Acumulado Total' : f.Fecha}</div>
+                    <div><strong>Dependencia(s):</strong> ${depLabel}</div>
+                    <div><strong>Canal de Medios:</strong> ${f.Canal}</div>
+                    <div><strong>Sentimiento/Estatus:</strong> ${f.Estatus}</div>
+                    <div><strong>Total de Registros:</strong> ${document.getElementById('kpi-total').innerText}</div>
+                </div>
+            `;
+
+            // Clousures para asegurar que Chart.js redibuje correctamente si fuera necesario, 
+            // aunque html2pdf captura el canvas tal cual está.
+            const element = document.getElementById('dash').cloneNode(true);
+            const wrapper = document.createElement('div');
+            wrapper.style.padding = "10px";
+            wrapper.appendChild(summary);
+            wrapper.appendChild(element);
+
             html2pdf().set({
-                margin: 0.5,
-                filename: 'Reporte_Ejecutivo_Monitoreo.pdf',
+                margin: 0.4,
+                filename: `Reporte_Monitoreo_${f.Clasificación}_${f.Fecha}.pdf`,
                 image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2, useCORS: true },
+                html2canvas: { scale: 2, useCORS: true, letterRendering: true },
                 jsPDF: { unit: 'in', format: 'letter', orientation: 'landscape' }
-            }).from(element).save();
+            }).from(wrapper).save();
         }
 
         window.onload = start;
