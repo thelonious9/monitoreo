@@ -1,84 +1,82 @@
 import pandas as pd
 import json
 import os
-import win32com.client # Librería para controlar Excel
+import win32com.client
 
 def refresh_power_query(file_path):
-    print("Actualizando consultas de Power Query...")
+    print(f"Actualizando Power Query en: {file_path}")
+    excel = None
     try:
-        # Iniciamos la aplicación de Excel
         excel = win32com.client.DispatchEx("Excel.Application")
-        excel.Visible = False # Que trabaje en segundo plano
+        excel.Visible = False 
         excel.DisplayAlerts = False
-        
-        # Abrimos el libro
         wb = excel.Workbooks.Open(file_path)
         
-        # Actualizamos todas las conexiones (Power Query)
+        for conn in wb.Connections:
+            if conn.Type == 1:
+                conn.OLEDBConnection.BackgroundQuery = False
+        
         wb.RefreshAll()
-        
-        # Esperamos a que la actualización termine (importante)
-        excel.CalculateUntilAsyncQueriesDone()
-        
-        # Guardamos y cerramos
         wb.Save()
         wb.Close()
-        excel.Quit()
-        print("Power Query actualizado con éxito.")
+        print("Actualización de Excel completada.")
     except Exception as e:
-        print(f"No se pudo actualizar Power Query: {e}")
-        # Intentamos cerrar Excel si quedó abierto por el error
-        if 'excel' in locals():
+        print(f"Error en Excel: {e}")
+    finally:
+        if excel:
             excel.Quit()
 
-def normalize_text(text):
-    if not isinstance(text, str) or text == "N/A":
-        return "N/A"
-    text = text.strip().capitalize()
-    mapping = {
-        'Ssph': 'SSPH', 'Difh': 'DIFH', 'Ieeh': 'IEEH', 'Teeh': 'TEEH',
-        'Cdheh': 'CDHEH', 'Pgjeh': 'PGJEH', 'Tsjeh': 'TSJEH', 'Uaeh': 'UAEH',
-        'Seph': 'SEPH', 'Rrss': 'RRSS', 'Tv': 'TV', 'Oficiala mayor': 'Oficialía Mayor'
-    }
-    return mapping.get(text, text)
-
 def export_to_json(excel_path, json_path):
-    # PASO 1: Forzar la actualización de Power Query antes de leer
+    # 1. Actualizar datos desde el Excel
     refresh_power_query(excel_path)
 
-    print(f"Procesando datos para el Dashboard...")
+    print(f"Procesando formatos y exportando a JSON...")
     try:
         df = pd.read_excel(excel_path, sheet_name='Fuente')
         
+        # Mapeo de columnas
         target_cols = ['Fecha', 'Medio', 'Dependencia', 'Organismo', 'Género', 'Canal', 'Tema', 'Estatus', 'Municipio', 'Región', 'Clasificación', 'Agrupación']
         if len(df.columns) >= 12:
             df.columns = target_cols + list(df.columns[12:])
 
-        fields = ["Dependencia", "Tema", "Estatus", "Municipio", "Región", "Canal", "Medio", "Género"]
-        for col in fields:
-            if col in df.columns:
-                df[col] = df[col].apply(normalize_text)
+        # --- LÓGICA DE FORMATEO ACTUALIZADA ---
         
+        # 1. Dependencia: TODO EN MAYÚSCULAS
+        if 'Dependencia' in df.columns:
+            df['Dependencia'] = df['Dependencia'].astype(str).str.strip().str.upper()
+            
+        # 2. Tema y Medio: Cada Palabra En Mayúscula (Title Case)
+        # Se añadió 'Medio' aquí para que sea "Tipo Título"
+        for col in ['Tema', 'Medio']:
+            if col in df.columns:
+                df[col] = df[col].astype(str).str.strip().str.title()
+
+        # 3. Otros campos: Solo la primera letra en mayúscula
+        other_fields = ["Estatus", "Municipio", "Región", "Canal", "Género"]
+        for col in other_fields:
+            if col in df.columns:
+                df[col] = df[col].astype(str).str.strip().str.capitalize()
+        
+        # Formateo de fechas
         for col in df.columns:
             if pd.api.types.is_datetime64_any_dtype(df[col]):
                 df[col] = df[col].dt.strftime('%d/%m/%Y')
         
-        if 'Fecha' in df.columns:
-            df['Fecha'] = df['Fecha'].apply(lambda x: x.replace('/01/2025', '/01/2026') if isinstance(x, str) else x)
+        # Limpieza final de nulos
+        df = df.replace("Nan", "N/A").fillna("N/A")
         
-        df = df.fillna("N/A")
-        
+        # Exportación a JSON
         data = df.to_dict(orient='records')
         with open(json_path, 'w', encoding='utf-8') as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
             
-        print("Success! Datos actualizados y exportados.")
+        print(f"¡Éxito! El campo 'Medio' ahora también usa formato de título.")
     except Exception as e:
-        print(f"Error crítico en la exportación: {e}")
+        print(f"Error crítico: {e}")
 
 if __name__ == "__main__":
-    base_dir = os.path.dirname(os.path.abspath(__file__))
-    excel_input = os.path.join(base_dir, "Data", "Fuente.xlsm")
-    json_output = os.path.join(base_dir, "Data", "datos.json")
+    folder_path = r"C:\Users\vivie\Dashboard\Data"
+    excel_input = os.path.join(folder_path, "Fuente.xlsm")
+    json_output = os.path.join(folder_path, "datos.json")
     
     export_to_json(excel_input, json_output)
